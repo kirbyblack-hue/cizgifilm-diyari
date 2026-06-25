@@ -1,0 +1,23 @@
+{
+  "name": "ÇizgiFilm Diyarı",
+  "short_name": "ÇFDiyarı",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#4ade80",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/fluent/192/ffffff/cute-monster.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://img.icons8.com/fluent/512/ffffff/cute-monster.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
