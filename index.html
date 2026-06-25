@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ÇizgiFilm Diyarı</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ÇizgiFilm">
+
+    <style>
+        /* --- GENEL TASARIM --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0fdf4;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            padding-bottom: 180px;
+            -webkit-tap-highlight-color: transparent; /* iOS dokunma gölgesini kaldırır */
+        }
+
+        /* Üst Başlık Alanı */
+        #ust-baslik {
+            width: 100%;
+            height: 90px;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .konteyner {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        /* Ayar Kutuları */
+        .ayar-kutusu {
+            background: #ffe4e6;
+            border: 3px solid #f43f5e;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .ayar-satir {
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #f43f5e;
+        }
+
+        select, input, button {
+            padding: 10px;
+            font-size: 15px;
+            border-radius: 10px;
+            border: 2px solid #cbd5e1;
+            margin: 4px;
+            box-sizing: border-box;
+            vertical-align: middle;
+        }
+
+        /* iOS ve Chrome için tıklama alanını büyütüp sabitledik */
+        button {
+            background-color: #4ade80;
+            border-color: #22c55e;
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+            min-height: 44px; /* iOS Minimum Tıklama Standartı */
+            display: inline-block;
+        }
+
+        button:active {
+            opacity: 0.7;
+        }
+
+        /* Medya Oynatıcı */
+        #oynatici-alani {
+            width: 100%;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 15px;
+        }
+
+        #oynatici-alani iframe, #oynatici-alani video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Playlist */
+        .playlist-kutu {
+            background: #e0f2fe;
+            border: 3px solid #38bdf8;
+            border-radius: 15px;
+            padding: 12px;
+        }
+
+        .video-eleman {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid #bfdbfe;
+            font-weight: bold;
+        }
+
+        .aktif-video { background: #bbf7d0 !important; border-color: #4ade80; }
+
+        .dosya-etiket {
+            background: #ebf8ff;
+            border: 2px solid #90cdf4;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 13px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        /* Sevimli Karakterler */
+        .karakter {
+            position: fixed;
+            bottom: 0;
+            width: 110px;
+            height: 150px;
+            background-repeat: no-repeat;
+            background-position: bottom;
+            background-size: contain;
+            z-index: 10; /* Butonların üzerine binip tıklamayı engellemesin diye düşürüldü */
+            pointer-events: none; /* Bebekler dokunsa da arkadaki butonlar çalışır */
+        }
+        #sol-koşe { left: 5px; }
+        #sag-koşe { right: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="ust-baslik"></div>
+
+    <div class="konteyner">
+        
+        <div class="ayar-kutusu">
+            <div class="ayar-satir">
+                <strong>Profil/Liste:</strong>
+                <select id="profil-secici" onchange="profilDegistir()"></select>
+                <button type="button" onclick="yeniProfilYarat()">➕ Yeni Profil</button>
+            </div>
+
+            <div class="ayar-satir">
+                <strong>Lokal Görseller (PNG):</strong><br>
+                <label class="dosya-etiket">Logo Seç <input type="file" accept="image/png" onchange="gorselYukle(event, 'logo')" style="display:none;"></label>
+                <label class="dosya-etiket">Sol Karakter <input type="file" accept="image/png" onchange="gorselYukle(event, 'sol')" style="display:none;"></label>
+                <label class="dosya-etiket">Sağ Karakter <input type="file" accept="image/png" onchange="gorselYukle(event, 'sag')" style="display:none;"></label>
+            </div>
+            
+            <div>
+                <strong>Video Ekle:</strong><br>
+                <input type="text" id="video-adi" placeholder="Çizgi Film Adı"><br>
+                <input type="text" id="video-link" placeholder="YouTube Linki (Opsiyonel)"><br>
+                <label class="dosya-etiket" style="background: #e6fffa; border-color: #319795;">
+                    Lokal MP4 Seç <input type="file" id="lokal-mp4" accept="video/mp4" style="display:none;" onchange="lokalVideoSecildi(event)">
+                </label>
+                <button type="button" onclick="videoEkle()">Ekle ✨</button>
+                <div id="secilen-dosya-adi" style="font-size:13px; color:#2d3748; margin-top:5px; font-weight:bold;"></div>
+            </div>
+        </div>
+
+        <div id="oynatici-alani">
+            <div id="oynatici-mesaj" style="color:white; text-align:center; padding-top:20%; font-weight:bold;">Lütfen bir çizgi film seçin veya yukarıdan yükleyin!</div>
+        </div>
+
+        <div class="playlist-kutu">
+            <h3>📺 Oynatma Listesi</h3>
+            <div id="playlist-sirasi"></div>
+        </div>
+
+    </div>
+
+    <div id="sol-koşe" class="karakter"></div>
+    <div id="sag-koşe" class="karakter"></div>
+
+    <script>
+        // Bellek sızıntısını ve iOS temizliğini önlemek için videoları nesne olarak tutuyoruz
+        var videoDosyaDeposu = {}; 
+        var veritabani = JSON.parse(localStorage.getItem('cf_pwa_data')) || { "Bebek Listesi 👶": [] };
+        var aktifProfil = Object.keys(veritabani)[0] || "Bebek Listesi 👶";
+        var suAnkiVideoIndex = 0;
+        var geciciSecilenDosya = null;
+
+        function veriKaydet() {
+            localStorage.setItem('cf_pwa_data', JSON.stringify(veritabani));
+        }
+
+        // --- LOKAL PNG GÖRSEL YÖNETİMİ ---
+        function gorselYukle(event, hedef) {
+            var dosya = event.target.files[0];
+            if (!dosya) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    localStorage.setItem('img_pwa_' + hedef, e.target.result);
+                    gorselleriYukleVeGoster();
+                } catch(err) {
+                    alert("Görsel boyutu çok büyük! Lütfen daha küçük boyutlu bir PNG seçin.");
+                }
+            };
+            reader.readAsDataURL(dosya);
+        }
+
+        function gorselleriYukleVeGoster() {
+            var logo = localStorage.getItem('img_pwa_logo');
+            var sol = localStorage.getItem('img_pwa_sol');
+            var sag = localStorage.getItem('img_pwa_sag');
+
+            if (logo) {
+                document.getElementById('ust-baslik').style.backgroundImage = "url('" + logo + "')";
+                document.getElementById('ust-baslik').style.display = "block";
+            }
+            if (sol) document.getElementById('sol-koşe').style.backgroundImage = "url('" + sol + "')";
+            if (sag) document.getElementById('sag-koşe').style.backgroundImage = "url('" + sag + "')";
+        }
+
+        // --- MP4 VİDEO SEÇİMİ ---
+        function lokalVideoSecildi(event) {
+            var dosya = event.target.files[0];
+            if (dosya) {
+                geciciSecilenDosya = dosya;
+                document.getElementById('secilen-dosya-adi').innerHTML = "Seçilen Dosya: " + dosya.name;
+                if(!document.getElementById('video-adi').value) {
+                    document.getElementById('video-adi').value = dosya.name.replace('.mp4', '');
+                }
+            }
+        }
+
+        // --- OYNATMA LİSTESİ ---
+        function arayuzYenile() {
+            var secici = document.getElementById('profil-secici');
+            secici.innerHTML = '';
+            for (var profil in veritabani) {
+                var opt = document.createElement('option');
+                opt.value = profil; opt.innerHTML = profil;
+                if(profil === aktifProfil) opt.selected = true;
+                secici.appendChild(opt);
+            }
+
+            var listeAlani = document.getElementById('playlist-sirasi');
+            listeAlani.innerHTML = '';
+            var videolar = veritabani[aktifProfil] || [];
+
+            if(videolar.length === 0) {
+                listeAlani.innerHTML = '<p style="color:gray; padding:10px;">Bu liste boş. Video ekleyin!</p>';
+                return;
+            }
+
+            for (var i = 0; i < videolar.length; i++) {
+                var div = document.createElement('div');
+                div.className = 'video-eleman' + (i === suAnkiVideoIndex ? ' aktif-video' : '');
+                
+                // Güvenli tıklama olayı (iOS dokunmatik fix)
+                div.setAttribute('data-index', i);
+                div.onclick = function(e) {
+                    var idx = parseInt(this.getAttribute('data-index'));
+                    videoyuOynat(idx);
+                };
+
+                div.innerHTML = '<span>' + videolar[i].ad + ' ' + (videolar[i].tip === 'lokal' ? '📁' : '🌐') + '</span> ' +
+                                '<button type="button" style="background:#ef4444; color:white; border-color:#dc2626; min-height:35px; padding:5px 10px;" onclick="videoSil('+i+', event)">❌</button>';
+                
+                listeAlani.appendChild(div);
+            }
+        }
+
+        function yeniProfilYarat() {
+            var isim = prompt("Profil adı girin:");
+            if(isim) { veritabani[isim] = []; aktifProfil = isim; veriKaydet(); arayuzYenile(); }
+        }
+
+        function profilDegistir() {
+            aktifProfil = document.getElementById('profil-secici').value;
+            suAnkiVideoIndex = 0;
+            arayuzYenile();
+        }
+
+        function videoEkle() {
+            var ad = document.getElementById('video-adi').value;
+            var link = document.getElementById('video-link').value;
+
+            if(!ad) { alert("Lütfen çizgi film adı yazın!"); return; }
+
+            if (geciciSecilenDosya) {
+                var dosyaId = 'vid_' + Date.now();
+                videoDosyaDeposu[dosyaId] = geciciSecilenDosya; // Tarayıcı açık kaldığı sürece çalışır
+                veritabani[aktifProfil].push({ad: ad, link: dosyaId, tip: 'lokal'});
+                geciciSecilenDosya = null;
+            } else if (link) {
+                veritabani[aktifProfil].push({ad: ad, link: link, tip: 'uzak'});
+            } else {
+                alert("Lütfen YouTube linki yapıştırın veya Lokal MP4 seçin!");
+                return;
+            }
+
+            veriKaydet();
+            arayuzYenile();
+            
+            document.getElementById('video-adi').value = '';
+            document.getElementById('video-link').value = '';
+            document.getElementById('secilen-dosya-adi').innerHTML = '';
+        }
+
+        function videoSil(index, e) {
+            if(e) e.stopPropagation();
+            veritabani[aktifProfil].splice(index, 1);
+            veriKaydet();
+            arayuzYenile();
+        }
+
+        function videoyuOynat(index) {
+            suAnkiVideoIndex = index;
+            var video = veritabani[aktifProfil][index];
+            var oynaticiAlani = document.getElementById('oynatici-alani');
+            if(!video) return;
+
+            arayuzYenile();
+
+            if (video.tip === 'lokal') {
+                var dosyaObjesi = videoDosyaDeposu[video.link];
+                if (dosyaObjesi) {
+                    var blobUrl = URL.createObjectURL(dosyaObjesi);
+                    oynaticiAlani.innerHTML = '<video id="mp4-video" controls autoplay playsinline webkit-playsinline src="'+blobUrl+'" style="width:100%; height:100%;"></video>';
+                    otomatikGecisAyarla();
+                } else {
+                    oynaticiAlani.innerHTML = '<div style="color:yellow; text-align:center; padding-top:15%; padding-horizontal:10px; font-weight:bold;">Lokal MP4 dosyalarının güvenliği nedeniyle, tarayıcı her yenilendiğinde videoyu yukarıdan tekrar seçip "Ekle" demeniz gerekir.</div>';
+                }
+            } else {
+                var link = video.link;
+                var videoId = "";
+                if(link.indexOf('v=') !== -1) videoId = link.split('v=')[1].split('&')[0];
+                else videoId = link.split('/').pop();
+                
+                // iOS ve modern Chrome uyumlu temiz embed
+                oynaticiAlani.innerHTML = '<iframe src="https://www.youtube.com/embed/'+videoId+'?autoplay=1&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+            }
+        }
+
+        function otomatikGecisAyarla() {
+            var v = document.getElementById('mp4-video');
+            if(v) {
+                v.onended = function() {
+                    if(suAnkiVideoIndex + 1 < veritabani[aktifProfil].length) {
+                        videoyuOynat(suAnkiVideoIndex + 1);
+                    }
+                };
+            }
+        }
+
+        // Açılış Komutları
+        gorselleriYukleVeGoster();
+        arayuzYenile();
+    </script>
+</body>
+</html>
+
